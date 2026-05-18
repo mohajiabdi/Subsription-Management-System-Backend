@@ -3,6 +3,7 @@
 const express = require("express");
 
 const router = express.Router();
+const authenticate = require("../middleware/authenticate");
 
 const {
   getSubscriptions,
@@ -11,12 +12,13 @@ const {
   deleteSubscription,
 } = require("./controller");
 
-router.get("/", getSubscriptions);
+router.get("/", authenticate("admin", "agent", "customer"), getSubscriptions);
 
-router.post("/", createSubscription);
+router.post("/", authenticate("admin"), createSubscription);
 
-router.put("/:id", updateSubscription);
+router.put("/:id", authenticate("admin"), updateSubscription);
+router.patch("/:id", authenticate("admin"), updateSubscription);
 
-router.delete("/:id", deleteSubscription);
+router.delete("/:id", authenticate("admin"), deleteSubscription);
 
 module.exports = router;

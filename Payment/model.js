@@ -12,13 +12,37 @@ const paymentSchema = new mongoose.Schema(
       ref: "Subscription",
       required: false,
     },
-    booking: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Booking",
-      required: false,
-    },
     amount: {
       type: Number,
+      required: true,
+    },
+    amountBeforeCredit: {
+      type: Number,
+      default: 0,
+    },
+    creditApplied: {
+      type: Number,
+      default: 0,
+    },
+    billingCycle: {
+      type: String,
+      enum: ["monthly", "quarterly", "annual"],
+      default: "monthly",
+    },
+    discountPercent: {
+      type: Number,
+      default: 0,
+    },
+    monthsCovered: {
+      type: Number,
+      default: 1,
+    },
+    billingPeriodStart: {
+      type: Date,
+      required: true,
+    },
+    billingPeriodEnd: {
+      type: Date,
       required: true,
     },
     method: {

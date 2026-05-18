@@ -59,6 +59,15 @@ const createUser = async (req, res) => {
     const { fullName, email, password, role, phone, isApproved, isActive } =
       req.body;
 
+    if (!fullName || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "fullName, email, and password are required",
+      });
+    }
+
+    const nextRole = req.user.role === "agent" ? "customer" : role || "customer";
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({
@@ -73,10 +82,10 @@ const createUser = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
-      role: role || "admin",
+      role: nextRole,
       phone,
-      isApproved,
-      isActive,
+      isApproved: isApproved ?? true,
+      isActive: isActive ?? true,
     });
 
     const { password: _, ...userData } = user.toObject();
@@ -98,10 +107,18 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { fullName, email, phone, isApproved, isActive, role } = req.body;
+    const payload = {};
+
+    if (fullName !== undefined) payload.fullName = fullName;
+    if (email !== undefined) payload.email = email;
+    if (phone !== undefined) payload.phone = phone || undefined;
+    if (isApproved !== undefined) payload.isApproved = isApproved;
+    if (isActive !== undefined) payload.isActive = isActive;
+    if (role !== undefined) payload.role = role;
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { fullName, email, phone, isApproved, isActive, role },
+      payload,
       { new: true, runValidators: true },
     ).select("-password");
 
@@ -128,7 +145,21 @@ const updateUser = async (req, res) => {
 
 const changeUserPassword = async (req, res) => {
   try {
-    const { password } = req.body;
+    const { password, confirmPassword } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
+
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -163,29 +194,31 @@ const getDashboardStats = async (req, res) => {
   try {
     const User = require("../User/model");
     const Subscription = require("../Subscription/model.js");
-    const UserSubscription = require("../Subscription/userSubscription.model.js");
+    const Payment = require("../Payment/model.js");
 
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
     const totalSubscriptions = await Subscription.countDocuments();
     const activeSubscriptionPlans = await Subscription.countDocuments({
       status: "active",
-      isActive: true,
     });
-    const totalSubscribedUsers = await UserSubscription.countDocuments({
-      status: "active",
+    const totalSubscribedUsers = await Payment.distinct("customer", {
+      status: "completed",
     });
-    const totalRevenue = await UserSubscription.aggregate([
-      {
-        $match: { paymentStatus: "paid" },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$billingInfo.amount" },
-        },
-      },
-    ]);
+    const totalRevenue =
+      req.user.role === "admin"
+        ? await Payment.aggregate([
+            {
+              $match: { status: "completed" },
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$amount" },
+              },
+            },
+          ])
+        : [];
 
     res.status(200).json({
       success: true,
@@ -198,11 +231,14 @@ const getDashboardStats = async (req, res) => {
         subscriptions: {
           total: totalSubscriptions,
           activePlans: activeSubscriptionPlans,
-          subscribedUsers: totalSubscribedUsers,
+          subscribedUsers: totalSubscribedUsers.length,
         },
-        revenue: {
-          total: totalRevenue[0]?.total || 0,
-        },
+        revenue:
+          req.user.role === "admin"
+            ? {
+                total: totalRevenue[0]?.total || 0,
+              }
+            : undefined,
       },
     });
   } catch (error) {
@@ -263,7 +299,7 @@ const manageUserRole = async (req, res) => {
     }
 
     // Check valid roles
-    const validRoles = ["admin", "user", "manager", "agent", "guest"];
+    const validRoles = ["admin", "agent", "customer"];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,

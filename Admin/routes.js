@@ -15,15 +15,15 @@ const {
 } = require("./controllers");
 
 // User management routes
-router.get("/users", authenticate("admin"), listUsers);
-router.get("/customers", authenticate("admin"), listCustomers);
-router.post("/users", authenticate("admin"), createUser);
+router.get("/users", authenticate("admin", "agent"), listUsers);
+router.get("/customers", authenticate("admin", "agent"), listCustomers);
+router.post("/users", authenticate("admin", "agent"), createUser);
 router.patch("/users/:id", authenticate("admin"), updateUser);
 router.delete("/users/:id", authenticate("admin"), deleteUser);
 router.patch("/users/:id/password", authenticate("admin"), changeUserPassword);
 
 // Dashboard and statistics
-router.get("/dashboard-stats", authenticate("admin"), getDashboardStats);
+router.get("/dashboard-stats", authenticate("admin", "agent"), getDashboardStats);
 router.get("/subscriptions", authenticate("admin"), getSubscriptionDetails);
 
 // Role management

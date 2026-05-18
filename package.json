@@ -1,15 +1,7 @@
 {
-  "name": "fuel-price-tracking-management-sytem",
+  "name": "subscription-management-system-backend",
   "version": "1.0.0",
-  "description": "waraa\r ## Getting started",
-  "homepage": "https://gitlab.com/internship1031419/fuel-price-tracking-management-system/fuel-price-tracking-management-sytem#readme",
-  "bugs": {
-    "url": "https://gitlab.com/internship1031419/fuel-price-tracking-management-system/fuel-price-tracking-management-sytem/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://gitlab.com/internship1031419/fuel-price-tracking-management-system/fuel-price-tracking-management-sytem.git"
-  },
+  "description": "Backend API for a subscription management system",
   "license": "ISC",
   "author": "",
   "type": "commonjs",
